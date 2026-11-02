@@ -1737,7 +1737,12 @@
         }
         // --- ENDE: Plan-Ordner Funktionen ---
 
-        window.onload = () => initApp();
+        window.onload = () => {
+    document.body.style.display = "none";
+    pruefePasswort();
+    initApp();
+};
+
     </script>
 </body>
 </html>
