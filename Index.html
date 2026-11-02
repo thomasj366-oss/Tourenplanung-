@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <script>
+        // Setze hier zwischen den Anführungszeichen dein Wunschpasswort ein:
+        const GEHEIMES_PASSWORT = "Themsen@2001"; 
+
+        function pruefePasswort() {
+            let eingabe = prompt("Bitte gib das Passwort ein, um die App zu nutzen:");
+            if (eingabe !== GEHEIMES_PASSWORT) {
+                alert("Falsches Passwort! Zugriff verweigert.");
+                document.body.innerHTML = "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'><h1>Zugriff verweigert.</h1><p>Bitte lade die Seite neu und gib das richtige Passwort ein.</p></div>";
+            } else {
+                document.<body onload="pruefePasswort()" style="display: none;">
+
+            }
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Themsen.de Tourenplaner & Monteur-App</title>
