@@ -999,6 +999,14 @@
             return { [`${year}-01-01`]: "Neujahr", [fmt(addDays(ostern, -2))]: "Karfreitag", [fmt(addDays(ostern, 1))]: "Ostermontag", [`${year}-05-01`]: "Tag der Arbeit", [fmt(addDays(ostern, 39))]: "Christi Himmelfahrt", [fmt(addDays(ostern, 50))]: "Pfingstmontag", [`${year}-10-03`]: "Tag d. Dt. Einheit", [`${year}-10-31`]: "Reformationstag", [`${year}-12-25`]: "1. Weihnachtstag", [`${year}-12-26`]: "2. Weihnachtstag" };
         };
 
+        // FEHLERBEHEBUNG: Die Funktion zur Berechnung der KW war versehentlich entfernt worden!
+        window.getWeekNumber = function(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            return Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+        };
+
         window.showToast = function(message, type = 'info') {
             const container = document.getElementById('toast-container'); const toast = document.createElement('div');
             let icon = type === 'success' ? 'fa-circle-check text-emerald-500' : 'fa-circle-info text-blue-500';
@@ -1126,9 +1134,16 @@
 
         function renderWeekView() {
             const d = new Date(state.currentDate); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); const startOfWeek = new Date(d.setDate(diff));
+            
+            // FEHLERBEHEBUNG: KW wird nun wieder fehlerfrei berechnet!
             const kw = window.getWeekNumber(startOfWeek);
-            const options = { day: '2-digit', month: 'short', year: 'numeric' }; const title = `KW ${kw} | ${startOfWeek.toLocaleDateString('de-DE', options)} – ${new Date(startOfWeek.getTime() + 4*24*60*60*1000).toLocaleDateString('de-DE', options)}`;
-            document.getElementById('current-date-label').innerText = title; document.getElementById('print-header-date').innerText = "Woche: " + title;
+            
+            const options = { day: '2-digit', month: 'short', year: 'numeric' }; 
+            // FEHLERBEHEBUNG: KW ist nun wieder Teil des Seitentitels
+            const title = `KW ${kw} | ${startOfWeek.toLocaleDateString('de-DE', options)} – ${new Date(startOfWeek.getTime() + 4*24*60*60*1000).toLocaleDateString('de-DE', options)}`;
+            
+            document.getElementById('current-date-label').innerText = title; 
+            document.getElementById('print-header-date').innerText = "Woche: " + title;
             const container = document.getElementById('schedule-days-container'); container.innerHTML = '';
             const printSelect = document.getElementById('print-day-select'); printSelect.innerHTML = '';
 
@@ -1203,44 +1218,62 @@
         }
 
         function renderMonthView() {
-            const date = new Date(state.currentDate); const grid = document.getElementById('month-grid-container'); grid.innerHTML = '';
+            const date = new Date(state.currentDate); const grid = document.getElementById('month-grid-container'); 
+            let daysHtml = '';
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1); const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
             let startPad = firstDay.getDay() - 1; if(startPad === -1) startPad = 6;
-            for(let i=0; i<startPad; i++) grid.innerHTML += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
             
             let cap = { green: 0, red: 0, blue: 0, total: 0 };
             let plan = { green: 0, red: 0, blue: 0, total: 0 };
             const holidays = window.getHolidays(date.getFullYear());
 
-            for(let day=1; day<=lastDay.getDate(); day++) {
-                const cur = new Date(date.getFullYear(), date.getMonth(), day); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
-                const isW = cur.getDay()===0||cur.getDay()===6; let cHtml = '';
-                const hName = holidays[dStr];
+            let currentDay = 1;
+            let weekRow = 0;
+            
+            while (currentDay <= lastDay.getDate()) {
+                let referenceDate = new Date(date.getFullYear(), date.getMonth(), currentDay);
+                let kw = window.getWeekNumber(referenceDate); 
+                daysHtml += `<div class="bg-slate-200/50 flex flex-col items-center justify-center border-r border-b border-slate-200 text-slate-400 shadow-inner font-bold min-h-[100px]"><span class="text-[10px] uppercase">KW</span><span class="text-sm">${kw}</span></div>`;
                 
-                if (!isW && !hName) {
-                    const hrs = cur.getDay() === 5 ? 6 : 8;
-                    cap.green += hrs; cap.red += hrs; cap.blue += hrs; cap.total += (hrs * 3);
-                }
-                
-                const dData = state.assignments[dStr] || {green:[], red:[], blue:[]};
-                ['green', 'red', 'blue'].forEach(team => { 
-                    (dData[team]||[]).forEach(id => { 
-                        const c = state.clients[id]; 
-                        if (c && c.duration) { plan[team] += Number(c.duration); plan.total += Number(c.duration); }
-                    }); 
-                });
+                for (let i = 0; i < 7; i++) {
+                    if (weekRow === 0 && i < startPad) {
+                        daysHtml += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
+                    } else if (currentDay <= lastDay.getDate()) {
+                        const cur = new Date(date.getFullYear(), date.getMonth(), currentDay); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
+                        const isW = cur.getDay()===0||cur.getDay()===6; let cHtml = '';
+                        const hName = holidays[dStr];
+                        
+                        if (!isW && !hName) {
+                            const hrs = cur.getDay() === 5 ? 6 : 8;
+                            cap.green += hrs; cap.red += hrs; cap.blue += hrs; cap.total += (hrs * 3);
+                        }
+                        
+                        const dData = state.assignments[dStr] || {green:[], red:[], blue:[]};
+                        ['green', 'red', 'blue'].forEach(team => { 
+                            (dData[team]||[]).forEach(id => { 
+                                const c = state.clients[id]; 
+                                if (c && c.duration) { plan[team] += Number(c.duration); plan.total += Number(c.duration); }
+                            }); 
+                        });
 
-                if(!isW) {
-                    const absEmps = state.employees.filter(e => state.vacations[e.id] && state.vacations[e.id][dStr]);
-                    const absHtml = absEmps.map(e => `<span class="text-[9px] ${getEmpColorClasses(e.colorTheme, false)} px-1 rounded border mb-0.5" title="${e.name}">${e.short}</span>`).join('');
-                    if(dData.green.length || dData.red.length || (dData.blue&&dData.blue.length)) { cHtml = `<div class="mt-2 space-y-1">${dData.green.length ? `<div class="text-[10px] bg-emerald-50 text-emerald-700 px-1 rounded border border-emerald-200">Grün (${dData.green.length})</div>`:''}${dData.red.length ? `<div class="text-[10px] bg-rose-50 text-rose-700 px-1 rounded border border-rose-200">Rot (${dData.red.length})</div>`:''}${(dData.blue&&dData.blue.length) ? `<div class="text-[10px] bg-blue-50 text-blue-700 px-1 rounded border border-blue-200">Blau (${dData.blue.length})</div>`:''}<div class="flex flex-wrap gap-0.5 mt-1">${absHtml}</div></div>`; } else if(absHtml) cHtml = `<div class="mt-2 flex flex-wrap gap-0.5">${absHtml}</div>`;
-                }
-                
-                let bgClass = isW ? 'bg-slate-50 text-slate-400' : 'bg-white hover:bg-slate-50 cursor-pointer';
-                if(hName) { cHtml = `<div class="mt-1 text-[9px] bg-rose-50 text-rose-700 font-bold px-1 rounded border border-rose-200 text-center leading-tight py-0.5">${hName}</div>` + cHtml; bgClass = 'bg-rose-50/40 hover:bg-rose-50'; }
+                        if(!isW) {
+                            const absEmps = state.employees.filter(e => state.vacations[e.id] && state.vacations[e.id][dStr]);
+                            const absHtml = absEmps.map(e => `<span class="text-[9px] ${getEmpColorClasses(e.colorTheme, false)} px-1 rounded border mb-0.5" title="${e.name}">${e.short}</span>`).join('');
+                            if(dData.green.length || dData.red.length || (dData.blue&&dData.blue.length)) { cHtml = `<div class="mt-2 space-y-1">${dData.green.length ? `<div class="text-[10px] bg-emerald-50 text-emerald-700 px-1 rounded border border-emerald-200">Grün (${dData.green.length})</div>`:''}${dData.red.length ? `<div class="text-[10px] bg-rose-50 text-rose-700 px-1 rounded border border-rose-200">Rot (${dData.red.length})</div>`:''}${(dData.blue&&dData.blue.length) ? `<div class="text-[10px] bg-blue-50 text-blue-700 px-1 rounded border border-blue-200">Blau (${dData.blue.length})</div>`:''}<div class="flex flex-wrap gap-0.5 mt-1">${absHtml}</div></div>`; } else if(absHtml) cHtml = `<div class="mt-2 flex flex-wrap gap-0.5">${absHtml}</div>`;
+                        }
+                        
+                        let bgClass = isW ? 'bg-slate-50 text-slate-400' : 'bg-white hover:bg-slate-50 cursor-pointer';
+                        if(hName) { cHtml = `<div class="mt-1 text-[9px] bg-rose-50 text-rose-700 font-bold px-1 rounded border border-rose-200 text-center leading-tight py-0.5">${hName}</div>` + cHtml; bgClass = 'bg-rose-50/40 hover:bg-rose-50'; }
 
-                grid.innerHTML += `<div class="p-2 min-h-[100px] border-r border-b border-slate-200 ${bgClass}" ${!isW?`onclick="window.goToDate('${dStr}')"`:''}><div class="text-right text-sm font-semibold ${hName?'text-rose-600':''}">${day}</div>${cHtml}</div>`;
+                        daysHtml += `<div class="p-2 min-h-[100px] border-r border-b border-slate-200 ${bgClass}" ${!isW?`onclick="window.goToDate('${dStr}')"`:''}><div class="text-right text-sm font-semibold ${hName?'text-rose-600':''}">${currentDay}</div>${cHtml}</div>`;
+                        currentDay++;
+                    } else {
+                        daysHtml += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
+                    }
+                }
+                weekRow++;
             }
+            grid.innerHTML = daysHtml;
 
             const statsContainer = document.getElementById('month-stats-container');
             if (statsContainer) {
