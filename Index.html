@@ -314,10 +314,10 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-7 bg-slate-100 border border-slate-200 text-center text-xs font-bold text-slate-600 uppercase tracking-wider rounded-t-lg">
-                                <div class="py-2">Mo</div><div class="py-2">Di</div><div class="py-2">Mi</div><div class="py-2">Do</div><div class="py-2">Fr</div><div class="py-2 text-slate-400">Sa</div><div class="py-2 text-slate-400">So</div>
+                            <div class="grid grid-cols-8 bg-slate-100 border border-slate-200 text-center text-xs font-bold text-slate-600 uppercase tracking-wider rounded-t-lg">
+                                <div class="py-2 text-slate-400 border-r border-slate-200">KW</div><div class="py-2">Mo</div><div class="py-2">Di</div><div class="py-2">Mi</div><div class="py-2">Do</div><div class="py-2">Fr</div><div class="py-2 text-slate-400">Sa</div><div class="py-2 text-slate-400">So</div>
                             </div>
-                            <div id="vacation-grid" class="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-[1px] border-x border-b border-slate-200 rounded-b-lg">
+                            <div id="vacation-grid" class="grid grid-cols-8 auto-rows-fr bg-slate-200 gap-[1px] border-x border-b border-slate-200 rounded-b-lg">
                                 <!-- Calendar cells generated here -->
                             </div>
                         </div>
@@ -1126,7 +1126,8 @@
 
         function renderWeekView() {
             const d = new Date(state.currentDate); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); const startOfWeek = new Date(d.setDate(diff));
-            const options = { day: '2-digit', month: 'short', year: 'numeric' }; const title = `${startOfWeek.toLocaleDateString('de-DE', options)} – ${new Date(startOfWeek.getTime() + 4*24*60*60*1000).toLocaleDateString('de-DE', options)}`;
+            const kw = window.getWeekNumber(startOfWeek);
+            const options = { day: '2-digit', month: 'short', year: 'numeric' }; const title = `KW ${kw} | ${startOfWeek.toLocaleDateString('de-DE', options)} – ${new Date(startOfWeek.getTime() + 4*24*60*60*1000).toLocaleDateString('de-DE', options)}`;
             document.getElementById('current-date-label').innerText = title; document.getElementById('print-header-date').innerText = "Woche: " + title;
             const container = document.getElementById('schedule-days-container'); container.innerHTML = '';
             const printSelect = document.getElementById('print-day-select'); printSelect.innerHTML = '';
@@ -1271,23 +1272,42 @@
             if (selectedVacationEmployee === 'all') { document.getElementById('vacation-calendar-title').innerHTML = `Gesamtübersicht`; document.getElementById('absence-type-selector').classList.add('hidden'); } else { const emp = state.employees.find(e => e.id === selectedVacationEmployee); const stats = getVacationStats(emp.id); document.getElementById('vacation-calendar-title').innerHTML = `${emp.name} <span class="ml-3 text-sm text-slate-500 bg-slate-100 px-2 py-1 rounded-md shadow-sm"><i class="fa-solid fa-umbrella-beach text-sky-500 mr-1"></i> ${stats.remaining} / ${stats.total} Tagen übrig</span>`; document.getElementById('absence-type-selector').classList.remove('hidden'); }
             
             const d = new Date(state.currentDate); const grid = document.getElementById('vacation-grid'); grid.innerHTML = '';
+            let daysHtml = '';
             const first = new Date(d.getFullYear(), d.getMonth(), 1); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-            let p = first.getDay() - 1; if(p === -1) p = 6; for (let i=0; i<p; i++) grid.innerHTML += `<div class="bg-white/50 p-2 min-h-[80px]"></div>`;
+            let p = first.getDay() - 1; if(p === -1) p = 6; 
+            
+            let currentDay = 1;
+            let weekRow = 0;
 
-            for(let day=1; day<=last.getDate(); day++) {
-                const cur = new Date(d.getFullYear(), d.getMonth(), day); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
-                const isW = cur.getDay()===0||cur.getDay()===6; let bgClass = isW ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'; let cHtml = '';
-                
-                if (selectedVacationEmployee === 'all') {
-                    let dAbs = '';
-                    state.employees.forEach(e => { const abs = state.vacations[e.id] && state.vacations[e.id][dStr]; if(abs) { const tInfo = absenceTypes[abs]; dAbs += `<div class="${getEmpColorClasses(e.colorTheme, false)} text-[10px] px-1 py-0.5 rounded border mb-0.5 flex justify-between"><span>${e.short}</span><i class="fa-solid ${tInfo.icon} text-[8px] opacity-75 mt-0.5"></i></div>`; } });
-                    if (dAbs) { cHtml = `<div class="mt-1">${dAbs}</div>`; bgClass = isW?'bg-slate-50':'bg-white'; }
-                } else {
-                    const emp = state.employees.find(e => e.id === selectedVacationEmployee); const abs = state.vacations[emp.id] && state.vacations[emp.id][dStr];
-                    if (abs) { bgClass = getEmpColorClasses(emp.colorTheme, false); const tInfo = absenceTypes[abs]; cHtml = `<div class="mt-2 text-center opacity-80"><i class="fa-solid ${tInfo.icon} text-xl"></i><div class="text-[10px] font-bold uppercase mt-1">${tInfo.label}</div></div>`; }
+            while (currentDay <= last.getDate()) {
+                let referenceDate = new Date(d.getFullYear(), d.getMonth(), currentDay);
+                let kw = window.getWeekNumber(referenceDate);
+                daysHtml += `<div class="bg-slate-200/50 flex flex-col items-center justify-center border-r border-b border-slate-200 text-slate-400 shadow-inner font-bold min-h-[80px]"><span class="text-[10px] uppercase">KW</span><span class="text-sm">${kw}</span></div>`;
+
+                for (let i = 0; i < 7; i++) {
+                    if (weekRow === 0 && i < p) {
+                        daysHtml += `<div class="bg-white/50 p-2 min-h-[80px]"></div>`;
+                    } else if (currentDay <= last.getDate()) {
+                        const cur = new Date(d.getFullYear(), d.getMonth(), currentDay); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
+                        const isW = cur.getDay()===0||cur.getDay()===6; let bgClass = isW ? 'bg-slate-50' : 'bg-white hover:bg-slate-50'; let cHtml = '';
+                        
+                        if (selectedVacationEmployee === 'all') {
+                            let dAbs = '';
+                            state.employees.forEach(e => { const abs = state.vacations[e.id] && state.vacations[e.id][dStr]; if(abs) { const tInfo = absenceTypes[abs]; dAbs += `<div class="${getEmpColorClasses(e.colorTheme, false)} text-[10px] px-1 py-0.5 rounded border mb-0.5 flex justify-between"><span>${e.short}</span><i class="fa-solid ${tInfo.icon} text-[8px] opacity-75 mt-0.5"></i></div>`; } });
+                            if (dAbs) { cHtml = `<div class="mt-1">${dAbs}</div>`; bgClass = isW?'bg-slate-50':'bg-white'; }
+                        } else {
+                            const emp = state.employees.find(e => e.id === selectedVacationEmployee); const abs = state.vacations[emp.id] && state.vacations[emp.id][dStr];
+                            if (abs) { bgClass = getEmpColorClasses(emp.colorTheme, false); const tInfo = absenceTypes[abs]; cHtml = `<div class="mt-2 text-center opacity-80"><i class="fa-solid ${tInfo.icon} text-xl"></i><div class="text-[10px] font-bold uppercase mt-1">${tInfo.label}</div></div>`; }
+                        }
+                        daysHtml += `<div class="p-2 min-h-[80px] border-r border-b border-slate-200 transition ${bgClass} ${!isW?'cursor-pointer':'cursor-default'}" ${!isW?`onclick="window.toggleVacation('${dStr}')"`:''}><div class="text-right text-sm ${isW?'text-slate-400':'text-slate-700'}">${currentDay}</div>${cHtml}</div>`;
+                        currentDay++;
+                    } else {
+                        daysHtml += `<div class="bg-white/50 p-2 min-h-[80px]"></div>`;
+                    }
                 }
-                grid.innerHTML += `<div class="p-2 min-h-[80px] border-r border-b border-slate-200 transition ${bgClass} ${!isW?'cursor-pointer':'cursor-default'}" ${!isW?`onclick="window.toggleVacation('${dStr}')"`:''}><div class="text-right text-sm ${isW?'text-slate-400':'text-slate-700'}">${day}</div>${cHtml}</div>`;
+                weekRow++;
             }
+            grid.innerHTML = daysHtml;
         }
 
         window.openClientModal = function(dateStr, teamKey) {
