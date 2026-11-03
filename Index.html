@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -83,6 +82,29 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Login-Fenster -->
+    <div id="login-container" class="fixed inset-0 bg-slate-900/95 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 text-center animate-in fade-in zoom-in duration-300">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+                <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Tourenplaner Login</h2>
+            <form onsubmit="window.loginMitFirebase(event)" class="space-y-4">
+                <input type="email" id="fb-email" placeholder="E-Mail-Adresse" required class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                <input type="password" id="fb-passwort" placeholder="Passwort" required class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-md transition mt-2">Einloggen</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logout Button -->
+    <button id="fb-logout-btn" onclick="window.logoutAusFirebase()" class="fixed bottom-4 left-4 z-[90] px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold shadow-lg transition flex items-center hidden no-print">
+        <i class="fa-solid fa-right-from-bracket mr-2"></i> Abmelden
+    </button>
+
+    <!-- HAUPT-APP CONTAINER (Wird ausgeblendet, wenn nicht eingeloggt) -->
+    <div id="app-container" class="hidden flex-grow flex flex-col">
 
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
@@ -209,7 +231,6 @@
                                     <thead class="bg-slate-200 text-slate-800 text-xs font-bold uppercase tracking-wider border-b-2 border-slate-600">
                                         <tr>
                                             <th class="p-2 border border-slate-400 cursor-pointer hover:bg-slate-300 w-16 text-center select-none" onclick="window.sortPlanFolder('kw')">KW <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
-                                            <th class="p-2 border border-slate-400 text-center w-32">Team</th>
                                             <th class="p-2 border border-slate-400 cursor-pointer hover:bg-slate-300 select-none" onclick="window.sortPlanFolder('ort')">PLZ / Ortsteil <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
                                             <th class="p-2 border border-slate-400 cursor-pointer hover:bg-slate-300 select-none" onclick="window.sortPlanFolder('name')">Name <i class="fa-solid fa-sort text-slate-400 ml-1"></i></th>
                                             <th class="p-2 border border-slate-400">Telefon</th>
@@ -237,8 +258,7 @@
                             <!-- Stats injected via JS -->
                         </div>
                     </div>
-                    <div class="grid grid-cols-8 bg-slate-100 border-b border-slate-200 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        <div class="py-3 text-slate-400 border-r border-slate-200">KW</div>
+                    <div class="grid grid-cols-7 bg-slate-100 border-b border-slate-200 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">
                         <div class="py-3">Montag</div>
                         <div class="py-3">Dienstag</div>
                         <div class="py-3">Mittwoch</div>
@@ -247,7 +267,7 @@
                         <div class="py-3 text-slate-400">Samstag</div>
                         <div class="py-3 text-slate-400">Sonntag</div>
                     </div>
-                    <div id="month-grid-container" class="grid grid-cols-8 auto-rows-fr bg-slate-200 gap-[1px] month-grid">
+                    <div id="month-grid-container" class="grid grid-cols-7 auto-rows-fr bg-slate-200 gap-[1px] month-grid">
                         <!-- Calendar cells generated here -->
                     </div>
                 </div>
@@ -471,7 +491,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">E-Mail</label>
                         <input type="text" id="plan-item-email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
@@ -479,6 +499,16 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Kd.-Nr.</label>
                         <input type="text" id="plan-item-customer-number" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <!-- NEU: Team Auswahl im Planordner -->
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Team (Optional)</label>
+                        <select id="plan-item-team" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="">- Offen -</option>
+                            <option value="green">🟢 Team Grün</option>
+                            <option value="red">🔴 Team Rot</option>
+                            <option value="blue">🔵 Team Blau</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -535,9 +565,9 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Team *</label>
                     <select id="schedule-plan-team" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500">
-                        <option value="green">Team Grün</option>
-                        <option value="red">Team Rot</option>
-                        <option value="blue">Team Blau</option>
+                        <option value="green">🟢 Team Grün</option>
+                        <option value="red">🔴 Team Rot</option>
+                        <option value="blue">🔵 Team Blau</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -727,11 +757,30 @@
         </div>
     </div>
 
+    </div> <!-- ENDE app-container -->
+
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- HIER DEINE ECHTEN FIREBASE-DATEN EINTRAGEN ---
+        const firebaseConfig = {
+            apiKey: "DEIN_API_KEY",
+            authDomain: "DEIN_PROJECT_ID.firebaseapp.com",
+            projectId: "DEIN_PROJECT_ID",
+            storageBucket: "DEIN_PROJECT_ID.appspot.com",
+            messagingSenderId: "DEINE_SENDER_ID",
+            appId: "DEINE_APP_ID"
+        };
+        
+        // Firebase initialisieren
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let isFirebaseActive = true;
 
         // Global State
         const defaultEmployees = [
@@ -758,7 +807,6 @@
         const allAvailableColors = [{ value: 'pink', label: 'Pink' }, { value: 'turquoise', label: 'Türkis' }, { value: 'lime', label: 'Hellgrün' }, { value: 'orange', label: 'Orange' }, { value: 'purple', label: 'Lila' }, { value: 'gray', label: 'Grau' }, { value: 'red', label: 'Rot' }, { value: 'blue', label: 'Blau' }, { value: 'green', label: 'Grün' }, { value: 'yellow', label: 'Gelb' }, { value: 'brown', label: 'Braun' }];
         
         let selectedVacationEmployee = 'all'; let currentAbsenceType = 'urlaub'; let targetDate = null; let targetTeam = null; let currentEditingClientId = null; let pendingOptimization = null;
-        let db, isFirebaseActive = false;
 
         // Eigene Dialog-Funktionen statt alert/confirm
         let confirmCallback = null;
@@ -808,17 +856,7 @@
             const roleSel = document.getElementById('role-selector');
             if(roleSel) roleSel.value = state.currentRole;
             loadLocalState();
-            
-            const customConfigStr = localStorage.getItem('themsen_firebase_config');
-            if (customConfigStr) {
-                try {
-                    let configObj = JSON.parse(customConfigStr);
-                    const app = initializeApp(configObj);
-                    db = getFirestore(app);
-                    isFirebaseActive = true;
-                    setupRealtimeSync();
-                } catch (e) { render(); }
-            } else { render(); }
+            render();
         }
 
         async function setupRealtimeSync() {
@@ -957,13 +995,6 @@
             const ostern = new Date(year, m - 1, d); const addDays = (date, days) => { const nd = new Date(date); nd.setDate(nd.getDate() + days); return nd; };
             const fmt = (date) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,'0'), String(date.getDate()).padStart(2,'0')].join('-');
             return { [`${year}-01-01`]: "Neujahr", [fmt(addDays(ostern, -2))]: "Karfreitag", [fmt(addDays(ostern, 1))]: "Ostermontag", [`${year}-05-01`]: "Tag der Arbeit", [fmt(addDays(ostern, 39))]: "Christi Himmelfahrt", [fmt(addDays(ostern, 50))]: "Pfingstmontag", [`${year}-10-03`]: "Tag d. Dt. Einheit", [`${year}-10-31`]: "Reformationstag", [`${year}-12-25`]: "1. Weihnachtstag", [`${year}-12-26`]: "2. Weihnachtstag" };
-        };
-
-        window.getWeekNumber = function(d) {
-            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            return Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
         };
 
         window.showToast = function(message, type = 'info') {
@@ -1169,62 +1200,44 @@
         }
 
         function renderMonthView() {
-            const date = new Date(state.currentDate); const grid = document.getElementById('month-grid-container'); 
-            let daysHtml = '';
+            const date = new Date(state.currentDate); const grid = document.getElementById('month-grid-container'); grid.innerHTML = '';
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1); const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
             let startPad = firstDay.getDay() - 1; if(startPad === -1) startPad = 6;
+            for(let i=0; i<startPad; i++) grid.innerHTML += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
             
             let cap = { green: 0, red: 0, blue: 0, total: 0 };
             let plan = { green: 0, red: 0, blue: 0, total: 0 };
             const holidays = window.getHolidays(date.getFullYear());
 
-            let currentDay = 1;
-            let weekRow = 0;
-            
-            while (currentDay <= lastDay.getDate()) {
-                let referenceDate = new Date(date.getFullYear(), date.getMonth(), currentDay);
-                let kw = window.getWeekNumber(referenceDate); 
-                daysHtml += `<div class="bg-slate-200/50 flex flex-col items-center justify-center border-r border-b border-slate-200 text-slate-400 shadow-inner font-bold min-h-[100px]"><span class="text-[10px] uppercase">KW</span><span class="text-sm">${kw}</span></div>`;
+            for(let day=1; day<=lastDay.getDate(); day++) {
+                const cur = new Date(date.getFullYear(), date.getMonth(), day); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
+                const isW = cur.getDay()===0||cur.getDay()===6; let cHtml = '';
+                const hName = holidays[dStr];
                 
-                for (let i = 0; i < 7; i++) {
-                    if (weekRow === 0 && i < startPad) {
-                        daysHtml += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
-                    } else if (currentDay <= lastDay.getDate()) {
-                        const cur = new Date(date.getFullYear(), date.getMonth(), currentDay); const dStr = [cur.getFullYear(), String(cur.getMonth()+1).padStart(2,'0'), String(cur.getDate()).padStart(2,'0')].join('-');
-                        const isW = cur.getDay()===0||cur.getDay()===6; let cHtml = '';
-                        const hName = holidays[dStr];
-                        
-                        if (!isW && !hName) {
-                            const hrs = cur.getDay() === 5 ? 6 : 8;
-                            cap.green += hrs; cap.red += hrs; cap.blue += hrs; cap.total += (hrs * 3);
-                        }
-                        
-                        const dData = state.assignments[dStr] || {green:[], red:[], blue:[]};
-                        ['green', 'red', 'blue'].forEach(team => { 
-                            (dData[team]||[]).forEach(id => { 
-                                const c = state.clients[id]; 
-                                if (c && c.duration) { plan[team] += Number(c.duration); plan.total += Number(c.duration); }
-                            }); 
-                        });
-
-                        if(!isW) {
-                            const absEmps = state.employees.filter(e => state.vacations[e.id] && state.vacations[e.id][dStr]);
-                            const absHtml = absEmps.map(e => `<span class="text-[9px] ${getEmpColorClasses(e.colorTheme, false)} px-1 rounded border mb-0.5" title="${e.name}">${e.short}</span>`).join('');
-                            if(dData.green.length || dData.red.length || (dData.blue&&dData.blue.length)) { cHtml = `<div class="mt-2 space-y-1">${dData.green.length ? `<div class="text-[10px] bg-emerald-50 text-emerald-700 px-1 rounded border border-emerald-200">Grün (${dData.green.length})</div>`:''}${dData.red.length ? `<div class="text-[10px] bg-rose-50 text-rose-700 px-1 rounded border border-rose-200">Rot (${dData.red.length})</div>`:''}${(dData.blue&&dData.blue.length) ? `<div class="text-[10px] bg-blue-50 text-blue-700 px-1 rounded border border-blue-200">Blau (${dData.blue.length})</div>`:''}<div class="flex flex-wrap gap-0.5 mt-1">${absHtml}</div></div>`; } else if(absHtml) cHtml = `<div class="mt-2 flex flex-wrap gap-0.5">${absHtml}</div>`;
-                        }
-                        
-                        let bgClass = isW ? 'bg-slate-50 text-slate-400' : 'bg-white hover:bg-slate-50 cursor-pointer';
-                        if(hName) { cHtml = `<div class="mt-1 text-[9px] bg-rose-50 text-rose-700 font-bold px-1 rounded border border-rose-200 text-center leading-tight py-0.5">${hName}</div>` + cHtml; bgClass = 'bg-rose-50/40 hover:bg-rose-50'; }
-
-                        daysHtml += `<div class="p-2 min-h-[100px] border-r border-b border-slate-200 ${bgClass}" ${!isW?`onclick="window.goToDate('${dStr}')"`:''}><div class="text-right text-sm font-semibold ${hName?'text-rose-600':''}">${currentDay}</div>${cHtml}</div>`;
-                        currentDay++;
-                    } else {
-                        daysHtml += `<div class="bg-white/50 p-2 border-r border-b border-slate-200 min-h-[100px]"></div>`;
-                    }
+                if (!isW && !hName) {
+                    const hrs = cur.getDay() === 5 ? 6 : 8;
+                    cap.green += hrs; cap.red += hrs; cap.blue += hrs; cap.total += (hrs * 3);
                 }
-                weekRow++;
+                
+                const dData = state.assignments[dStr] || {green:[], red:[], blue:[]};
+                ['green', 'red', 'blue'].forEach(team => { 
+                    (dData[team]||[]).forEach(id => { 
+                        const c = state.clients[id]; 
+                        if (c && c.duration) { plan[team] += Number(c.duration); plan.total += Number(c.duration); }
+                    }); 
+                });
+
+                if(!isW) {
+                    const absEmps = state.employees.filter(e => state.vacations[e.id] && state.vacations[e.id][dStr]);
+                    const absHtml = absEmps.map(e => `<span class="text-[9px] ${getEmpColorClasses(e.colorTheme, false)} px-1 rounded border mb-0.5" title="${e.name}">${e.short}</span>`).join('');
+                    if(dData.green.length || dData.red.length || (dData.blue&&dData.blue.length)) { cHtml = `<div class="mt-2 space-y-1">${dData.green.length ? `<div class="text-[10px] bg-emerald-50 text-emerald-700 px-1 rounded border border-emerald-200">Grün (${dData.green.length})</div>`:''}${dData.red.length ? `<div class="text-[10px] bg-rose-50 text-rose-700 px-1 rounded border border-rose-200">Rot (${dData.red.length})</div>`:''}${(dData.blue&&dData.blue.length) ? `<div class="text-[10px] bg-blue-50 text-blue-700 px-1 rounded border border-blue-200">Blau (${dData.blue.length})</div>`:''}<div class="flex flex-wrap gap-0.5 mt-1">${absHtml}</div></div>`; } else if(absHtml) cHtml = `<div class="mt-2 flex flex-wrap gap-0.5">${absHtml}</div>`;
+                }
+                
+                let bgClass = isW ? 'bg-slate-50 text-slate-400' : 'bg-white hover:bg-slate-50 cursor-pointer';
+                if(hName) { cHtml = `<div class="mt-1 text-[9px] bg-rose-50 text-rose-700 font-bold px-1 rounded border border-rose-200 text-center leading-tight py-0.5">${hName}</div>` + cHtml; bgClass = 'bg-rose-50/40 hover:bg-rose-50'; }
+
+                grid.innerHTML += `<div class="p-2 min-h-[100px] border-r border-b border-slate-200 ${bgClass}" ${!isW?`onclick="window.goToDate('${dStr}')"`:''}><div class="text-right text-sm font-semibold ${hName?'text-rose-600':''}">${day}</div>${cHtml}</div>`;
             }
-            grid.innerHTML = daysHtml;
 
             const statsContainer = document.getElementById('month-stats-container');
             if (statsContainer) {
@@ -1365,15 +1378,15 @@
         window.closeMoveModal = function() { document.getElementById('move-modal').classList.add('hidden'); }
         window.executeMove = function() { const clientId = document.getElementById('move-client-id').value, sourceDate = document.getElementById('move-source-date').value, sourceTeam = document.getElementById('move-source-team').value; const targetDate = document.getElementById('move-date-input').value, targetTeam = document.getElementById('move-team-input').value; if(state.assignments[sourceDate] && state.assignments[sourceDate][sourceTeam]) { state.assignments[sourceDate][sourceTeam] = state.assignments[sourceDate][sourceTeam].filter(id => id !== clientId); } ensureAssignmentDay(targetDate); state.assignments[targetDate][targetTeam].push(clientId); saveState(); closeMoveModal(); window.showToast('Termin verschoben', 'success'); }
 
-        window.openEmployeeManager = function() { renderEmployeeList(); document.getElementById('employee-modal').classList.remove('hidden'); }
+        window.openEmployeeManager = function() { window.renderEmployeeList(); document.getElementById('employee-modal').classList.remove('hidden'); }
         window.closeEmployeeManager = function() { document.getElementById('employee-modal').classList.add('hidden'); render(); }
         window.renderEmployeeList = function() { document.getElementById('empmgr-list').innerHTML = state.employees.map(e => `<div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50 mb-1 rounded-lg border mx-4 my-2"><div class="flex items-center space-x-4"><span class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${getEmpColorClasses(e.colorTheme, true)}">${e.short}</span><div><div class="font-bold text-sm text-slate-800">${e.name}</div><div class="text-xs text-slate-500 mt-0.5">${e.onlyAbsence ? 'Büro' : 'Außendienst'} | ${e.totalVacation} Tage</div></div></div><div class="flex space-x-2"><button onclick="window.editEmployee('${e.id}')" class="w-8 h-8 flex items-center justify-center bg-white border rounded-lg"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="window.deleteEmployee('${e.id}')" class="w-8 h-8 flex items-center justify-center bg-white border rounded-lg text-rose-600"><i class="fa-solid fa-trash-can text-xs"></i></button></div></div>`).join(''); document.getElementById('empmgr-form-container').classList.add('hidden'); document.getElementById('empmgr-list-container').classList.remove('hidden'); }
         function populateColorDropdown(currentTheme = '') { const usedColors = new Set(state.employees.map(e => e.colorTheme)); document.getElementById('empmgr-color').innerHTML = allAvailableColors.filter(c => c.value === currentTheme || !usedColors.has(c.value)).map(c => `<option value="${c.value}" ${c.value === currentTheme ? 'selected' : ''}>${c.label}</option>`).join(''); }
         window.editEmployee = function(id) { let emp = state.employees.find(e => e.id === id); if(!emp) return; document.getElementById('empmgr-form-title').innerText = "Bearbeiten"; document.getElementById('empmgr-id').value = emp.id; document.getElementById('empmgr-name').value = emp.name; document.getElementById('empmgr-short').value = emp.short; document.getElementById('empmgr-vacation').value = emp.totalVacation; document.getElementById('empmgr-type').value = emp.onlyAbsence ? 'office' : 'field'; populateColorDropdown(emp.colorTheme); document.getElementById('empmgr-list-container').classList.add('hidden'); document.getElementById('empmgr-form-container').classList.remove('hidden'); }
         window.showAddEmployee = function() { document.getElementById('empmgr-form-title').innerText = "Neu"; document.getElementById('empmgr-id').value = ''; document.getElementById('empmgr-name').value = ''; document.getElementById('empmgr-short').value = ''; document.getElementById('empmgr-vacation').value = '30'; document.getElementById('empmgr-type').value = 'field'; populateColorDropdown(''); document.getElementById('empmgr-list-container').classList.add('hidden'); document.getElementById('empmgr-form-container').classList.remove('hidden'); }
         window.cancelEmployeeEdit = function() { document.getElementById('empmgr-form-container').classList.add('hidden'); document.getElementById('empmgr-list-container').classList.remove('hidden'); }
-        window.saveEmployee = function(e) { e.preventDefault(); const id = document.getElementById('empmgr-id').value; const name = document.getElementById('empmgr-name').value.trim(); const short = document.getElementById('empmgr-short').value.trim().toUpperCase(); const colorTheme = document.getElementById('empmgr-color').value; const totalVacation = parseInt(document.getElementById('empmgr-vacation').value) || 30; const onlyAbsence = document.getElementById('empmgr-type').value === 'office'; if (id) { const idx = state.employees.findIndex(em => em.id === id); if (idx > -1) state.employees[idx] = { id, name, short, colorTheme, totalVacation, onlyAbsence }; } else { state.employees.push({ id: 'e_' + Date.now(), name, short, colorTheme, totalVacation, onlyAbsence }); } saveState(); renderEmployeeList(); window.showToast('Personal gesichert', 'success'); }
-        window.deleteEmployee = function(id) { window.customConfirm('Mitarbeiter endgültig entfernen?', () => { state.employees = state.employees.filter(e => e.id !== id); saveState(); renderEmployeeList(); }); }
+        window.saveEmployee = function(e) { e.preventDefault(); const id = document.getElementById('empmgr-id').value; const name = document.getElementById('empmgr-name').value.trim(); const short = document.getElementById('empmgr-short').value.trim().toUpperCase(); const colorTheme = document.getElementById('empmgr-color').value; const totalVacation = parseInt(document.getElementById('empmgr-vacation').value) || 30; const onlyAbsence = document.getElementById('empmgr-type').value === 'office'; if (id) { const idx = state.employees.findIndex(em => em.id === id); if (idx > -1) state.employees[idx] = { id, name, short, colorTheme, totalVacation, onlyAbsence }; } else { state.employees.push({ id: 'e_' + Date.now(), name, short, colorTheme, totalVacation, onlyAbsence }); } saveState(); window.renderEmployeeList(); window.showToast('Personal gesichert', 'success'); }
+        window.deleteEmployee = function(id) { window.customConfirm('Mitarbeiter endgültig entfernen?', () => { state.employees = state.employees.filter(e => e.id !== id); saveState(); window.renderEmployeeList(); }); }
 
         window.openCustomerBase = function() { window.renderCustomerBaseList(); document.getElementById('customer-base-modal').classList.remove('hidden'); }
         window.closeCustomerBase = function() { document.getElementById('customer-base-modal').classList.add('hidden'); }
@@ -1541,24 +1554,21 @@
             });
             
             if (items.length === 0) {
-                list.innerHTML = '<tr><td colspan="8" class="p-12 text-center text-slate-500 italic"><i class="fa-solid fa-folder-open text-4xl mb-4 opacity-50 block"></i>Ihr Plan-Ordner ist leer.</td></tr>';
+                list.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-500 italic"><i class="fa-solid fa-folder-open text-4xl mb-4 opacity-50 block"></i>Ihr Plan-Ordner ist leer.</td></tr>';
                 return;
             }
             
             list.innerHTML = items.map(item => {
+                let teamBadge = '';
+                if (item.team === 'green') teamBadge = '<span class="w-3 h-3 rounded-full bg-emerald-500 inline-block mr-2 shadow-sm shrink-0" title="Team Grün"></span>';
+                else if (item.team === 'red') teamBadge = '<span class="w-3 h-3 rounded-full bg-rose-500 inline-block mr-2 shadow-sm shrink-0" title="Team Rot"></span>';
+                else if (item.team === 'blue') teamBadge = '<span class="w-3 h-3 rounded-full bg-blue-500 inline-block mr-2 shadow-sm shrink-0" title="Team Blau"></span>';
+
                 return `
                 <tr class="hover:bg-amber-50 transition bg-white group border-b border-slate-400">
                     <td class="p-2 border border-slate-400 text-center font-bold text-red-600 text-base">${escapeHtml(item.kw || '')}</td>
-                    <td class="p-2 border border-slate-400 text-center">
-                        <div class="flex justify-center gap-1">
-                            <button onclick="window.quickAssignTeam('${item.id}', 'green')" class="w-6 h-6 flex items-center justify-center rounded-full border ${item.team === 'green' ? 'bg-emerald-500 border-emerald-600 text-white shadow-inner' : 'bg-slate-50 hover:bg-emerald-100 border-slate-300'}" title="Grün"><i class="fa-solid fa-check text-[10px] ${item.team === 'green' ? 'block' : 'hidden'}"></i></button>
-                            <button onclick="window.quickAssignTeam('${item.id}', 'red')" class="w-6 h-6 flex items-center justify-center rounded-full border ${item.team === 'red' ? 'bg-rose-500 border-rose-600 text-white shadow-inner' : 'bg-slate-50 hover:bg-rose-100 border-slate-300'}" title="Rot"><i class="fa-solid fa-check text-[10px] ${item.team === 'red' ? 'block' : 'hidden'}"></i></button>
-                            <button onclick="window.quickAssignTeam('${item.id}', 'blue')" class="w-6 h-6 flex items-center justify-center rounded-full border ${item.team === 'blue' ? 'bg-blue-500 border-blue-600 text-white shadow-inner' : 'bg-slate-50 hover:bg-blue-100 border-slate-300'}" title="Blau"><i class="fa-solid fa-check text-[10px] ${item.team === 'blue' ? 'block' : 'hidden'}"></i></button>
-                            <button onclick="window.quickAssignTeam('${item.id}', '')" class="w-6 h-6 flex items-center justify-center rounded-full border ${!item.team ? 'bg-slate-500 border-slate-600 text-white shadow-inner' : 'bg-slate-50 hover:bg-slate-200 border-slate-300'}" title="Offen"><i class="fa-solid fa-minus text-[10px] ${!item.team ? 'block' : 'hidden'}"></i></button>
-                        </div>
-                    </td>
                     <td class="p-2 border border-slate-400 text-slate-700">${escapeHtml(item.address)}</td>
-                    <td class="p-2 border border-slate-400 font-bold text-slate-900">${escapeHtml(item.name)}</td>
+                    <td class="p-2 border border-slate-400 font-bold text-slate-900"><div class="flex items-center">${teamBadge}${escapeHtml(item.name)}</div></td>
                     <td class="p-2 border border-slate-400 text-slate-700 font-mono text-xs">${escapeHtml(item.phone || '-')}</td>
                     <td class="p-2 border border-slate-400 text-center font-bold text-red-600">${item.duration}h</td>
                     <td class="p-2 border border-slate-400 text-xs italic text-slate-600 max-w-xs truncate">${escapeHtml(item.notes) || '-'}</td>
@@ -1574,14 +1584,6 @@
             }).join('');
         }
 
-        window.quickAssignTeam = function(id, team) {
-            if(state.planFolder[id]) {
-                state.planFolder[id].team = team;
-                saveState();
-                window.renderPlanFolderView();
-            }
-        }
-
         window.openPlanModal = function() {
             document.getElementById('plan-item-form').reset();
             document.getElementById('plan-item-id').value = '';
@@ -1589,6 +1591,7 @@
             document.getElementById('plan-item-time-start').value = "08:00"; 
             document.getElementById('plan-item-time-end').value = "10:00";
             document.getElementById('plan-item-planned-time').value = "08:00";
+            document.getElementById('plan-item-team').value = "";
             document.getElementById('plan-item-modal').classList.remove('hidden');
         }
         
@@ -1609,6 +1612,7 @@
                 email: document.getElementById('plan-item-email').value.trim(),
                 customerNumber: document.getElementById('plan-item-customer-number').value.trim(),
                 kw: document.getElementById('plan-item-kw').value.trim(),
+                team: document.getElementById('plan-item-team').value,
                 timeStart: document.getElementById('plan-item-time-start').value,
                 timeEnd: document.getElementById('plan-item-time-end').value,
                 plannedTime: document.getElementById('plan-item-planned-time').value,
@@ -1631,6 +1635,7 @@
             document.getElementById('plan-item-email').value = item.email || '';
             document.getElementById('plan-item-customer-number').value = item.customerNumber || '';
             document.getElementById('plan-item-kw').value = item.kw || '';
+            document.getElementById('plan-item-team').value = item.team || '';
             document.getElementById('plan-item-time-start').value = item.timeStart || '08:00';
             document.getElementById('plan-item-time-end').value = item.timeEnd || '10:00';
             document.getElementById('plan-item-planned-time').value = item.plannedTime || '08:00';
@@ -1671,6 +1676,12 @@
             const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1);
             const monday = new Date(d.setDate(diff));
             document.getElementById('schedule-plan-date').value = [monday.getFullYear(), String(monday.getMonth()+1).padStart(2,'0'), String(monday.getDate()).padStart(2,'0')].join('-');
+            
+            if (item.team) {
+                document.getElementById('schedule-plan-team').value = item.team;
+            } else {
+                document.getElementById('schedule-plan-team').value = "green";
+            }
             
             document.getElementById('schedule-plan-modal').classList.remove('hidden');
         }
@@ -1724,8 +1735,48 @@
         }
         // --- ENDE: Plan-Ordner Funktionen ---
 
-        window.onload = () => initApp();
+        // Login und Logout Logik (Modular SDK kompatibel)
+        window.loginMitFirebase = function(e) {
+            e.preventDefault();
+            const email = document.getElementById("fb-email").value;
+            const passwort = document.getElementById("fb-passwort").value;
+            signInWithEmailAndPassword(auth, email, passwort)
+                .then(() => { window.showToast("Erfolgreich eingeloggt!", "success"); })
+                .catch((error) => { window.showToast("Fehler beim Login: " + error.message, "error"); });
+        };
+
+        window.logoutAusFirebase = function() {
+            signOut(auth).then(() => {
+                window.showToast("Erfolgreich abgemeldet!", "success");
+            }).catch((error) => {
+                window.showToast("Fehler beim Abmelden: " + error.message, "error");
+            });
+        };
+
+        window.onload = () => {
+            // Firebase Auth Status überwachen (wie in "Schritt 3" korrigiert)
+            onAuthStateChanged(auth, (user) => {
+                const loginSektion = document.getElementById("login-container");
+                const logoutButton = document.getElementById("fb-logout-btn");
+                const appContainer = document.getElementById("app-container");
+                
+                if (user) {
+                    // Nutzer ist angemeldet
+                    if (loginSektion) loginSektion.classList.add("hidden");
+                    if (logoutButton) logoutButton.classList.remove("hidden");
+                    if (appContainer) appContainer.classList.remove("hidden");
+                    
+                    // App erst starten, wenn eingeloggt
+                    initApp();
+                    setupRealtimeSync();
+                } else {
+                    // Nutzer ist NICHT angemeldet
+                    if (logoutButton) logoutButton.classList.add("hidden");
+                    if (appContainer) appContainer.classList.add("hidden");
+                    if (loginSektion) loginSektion.classList.remove("hidden");
+                }
+            });
+        };
     </script>
 </body>
 </html>
-```
